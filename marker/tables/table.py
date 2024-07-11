@@ -104,13 +104,75 @@ def get_table_pdftext(page: Page, table_box, space_tol=.01, round_factor=4) -> L
     return table_rows
 
 
-def format_tables(pages: List[Page]):
+# def format_tables(pages: List[Page]):
+#     # Formats tables nicely into github flavored markdown
+#     table_count = 0
+#     for page in pages:
+#         table_insert_points = {}
+#         blocks_to_remove = set()
+#         pnum = page.pnum
+
+#         page_table_boxes = [b for b in page.layout.bboxes if b.label == "Table"]
+#         page_table_boxes = [rescale_bbox(page.layout.image_bbox, page.bbox, b.bbox) for b in page_table_boxes]
+#         for table_idx, table_box in enumerate(page_table_boxes):
+#             for block_idx, block in enumerate(page.blocks):
+#                 intersect_pct = block.intersection_pct(table_box)
+#                 if intersect_pct > settings.BBOX_INTERSECTION_THRESH and block.block_type == "Table":
+#                     if table_idx not in table_insert_points:
+#                         table_insert_points[table_idx] = block_idx - len(blocks_to_remove) + table_idx # Where to insert the new table
+#                     blocks_to_remove.add(block_idx)
+
+#         new_page_blocks = []
+#         for block_idx, block in enumerate(page.blocks):
+#             if block_idx in blocks_to_remove:
+#                 continue
+#             new_page_blocks.append(block)
+
+#         for table_idx, table_box in enumerate(page_table_boxes):
+#             if table_idx not in table_insert_points:
+#                 continue
+
+#             if page.ocr_method == "surya":
+#                 table_rows = get_table_surya(page, table_box)
+#             else:
+#                 table_rows = get_table_pdftext(page, table_box)
+#             # Skip empty tables
+#             if len(table_rows) == 0:
+#                 continue
+
+#             table_text = tabulate(table_rows, headers="firstrow", tablefmt="github", disable_numparse=True)
+#             table_block = Block(
+#                 bbox=table_box,
+#                 block_type="Table",
+#                 pnum=pnum,
+#                 lines=[Line(
+#                     bbox=table_box,
+#                     spans=[Span(
+#                         bbox=table_box,
+#                         span_id=f"{table_idx}_table",
+#                         font="Table",
+#                         font_size=0,
+#                         font_weight=0,
+#                         block_type="Table",
+#                         text=table_text
+#                     )]
+#                 )]
+#             )
+#             insert_point = table_insert_points[table_idx]
+#             new_page_blocks.insert(insert_point, table_block)
+#             table_count += 1
+#         page.blocks = new_page_blocks
+#     return table_count
+
+
+def format_tables(doc, pages: List[Page]):
     # Formats tables nicely into github flavored markdown
     table_count = 0
-    for page in pages:
+    for page_idx, page in enumerate(pages):     ## PJ: Added page_idx
         table_insert_points = {}
         blocks_to_remove = set()
         pnum = page.pnum
+        page_obj = doc[page_idx]        ## PJ: Added for image extraction
 
         page_table_boxes = [b for b in page.layout.bboxes if b.label == "Table"]
         page_table_boxes = [rescale_bbox(page.layout.image_bbox, page.bbox, b.bbox) for b in page_table_boxes]
@@ -136,11 +198,13 @@ def format_tables(pages: List[Page]):
                 table_rows = get_table_surya(page, table_box)
             else:
                 table_rows = get_table_pdftext(page, table_box)
+
             # Skip empty tables
-            if len(table_rows) == 0:
-                continue
+            #if len(table_rows) == 0:
+            #    continue
 
             table_text = tabulate(table_rows, headers="firstrow", tablefmt="github", disable_numparse=True)
+            table_text = "\n----TABLE TEXT START----\n\n" + table_text + "\n\n----TABLE TEXT END----\n"
             table_block = Block(
                 bbox=table_box,
                 block_type="Table",
@@ -161,5 +225,30 @@ def format_tables(pages: List[Page]):
             insert_point = table_insert_points[table_idx]
             new_page_blocks.insert(insert_point, table_block)
             table_count += 1
+
+            # # Try to eat the table text
+            # table_text = "[[TABLE TEXT REMOVED]]"
+            # table_block = Block(
+            #     bbox=table_box,
+            #     block_type="Table",
+            #     pnum=pnum,
+            #     lines=[Line(
+            #         bbox=table_box,
+            #         spans=[Span(
+            #             bbox=table_box,
+            #             span_id=f"{table_idx}_table",
+            #             font="Table",
+            #             font_size=0,
+            #             font_weight=0,
+            #             block_type="Table",
+            #             text=table_text
+            #         )]
+            #     )]
+            # )
+            # insert_point = table_insert_points[table_idx]
+            # new_page_blocks.insert(insert_point, table_block)
+            # table_count += 1
+
+
         page.blocks = new_page_blocks
     return table_count

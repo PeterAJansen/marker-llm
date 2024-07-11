@@ -24,12 +24,25 @@ def main():
 
     langs = args.langs.split(",") if args.langs else None
 
-    fname = args.filename
-    model_lst = load_all_models()
-    full_text, images, out_meta = convert_single_pdf(fname, model_lst, max_pages=args.max_pages, langs=langs, batch_multiplier=args.batch_multiplier, start_page=args.start_page)
+    print("TEST: Starting Marker...")
 
+    fname = args.filename
+    subfolder_path = args.output + "/" + fname.split(".")[0] + "/"
+    print("TEST: subfolder_path: ", subfolder_path)
+
+    model_lst = load_all_models()
+    full_text, images, out_meta, all_extracted_table_figure_info = convert_single_pdf(fname, model_lst, max_pages=args.max_pages, langs=langs, batch_multiplier=args.batch_multiplier, start_page=args.start_page, subfolder_path=subfolder_path)
+    fname = args.filename
     fname = os.path.basename(fname)
     subfolder_path = save_markdown(args.output, fname, full_text, images, out_meta)
+
+
+    # Save the all_extracted_table_figure_info to a json file
+    json_path = os.path.join(subfolder_path, "all_extracted_table_figure_info.json")
+    import json
+    with open(json_path, "w") as f:
+        json.dump(all_extracted_table_figure_info, f, indent=4)
+
 
     print(f"Saved markdown to the {subfolder_path} folder")
 

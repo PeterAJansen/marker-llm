@@ -155,7 +155,7 @@ def _tesseract_recognition(in_pdf, langs: List[str]) -> Optional[Page]:
         f.write(out_pdf.getvalue())
         f.seek(0)
         new_doc = pdfium.PdfDocument(f.name)
-        blocks, _ = get_text_blocks(new_doc, f.name, max_pages=1)
+        blocks, _, _ = get_text_blocks(new_doc, f.name, max_pages=1)
 
     page = blocks[0]
     page.ocr_method = "tesseract"

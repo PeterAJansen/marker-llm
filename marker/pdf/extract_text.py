@@ -93,7 +93,7 @@ def get_text_blocks(doc, fname, max_pages: Optional[int] = None, start_page: Opt
     char_blocks = dictionary_output(fname, page_range=page_range, keep_chars=True, workers=settings.PDFTEXT_CPU_WORKERS)
     marker_blocks = [pdftext_format_to_blocks(page, pnum) for pnum, page in enumerate(char_blocks)]
 
-    return marker_blocks, toc
+    return marker_blocks, toc, char_blocks
 
 
 def naive_get_text(doc):
